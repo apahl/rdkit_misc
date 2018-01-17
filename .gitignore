@@ -1,0 +1,15 @@
+.ipynb_checkpoints/
+tutorials/.ipynb_checkpoints
+.kdev4/
+.vscode/
+doc/_build/
+doc/_static
+doc/_templates
+*.pkl
+*.mrv
+*.mol
+*.pyc
+branch_info.txt
+commit_msg.txt
+snippets.txt
+tags
