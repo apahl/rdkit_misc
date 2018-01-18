@@ -7,12 +7,19 @@ from rdkit.Chem import Draw
 Draw.DrawingOptions.atomLabelFontFace = "DejaVu Sans"
 Draw.DrawingOptions.atomLabelFontSize = 18
 
-from rdkit.Chem import rdDepictor
 from rdkit.Chem.Draw import rdMolDraw2D
 
 # from rdkit.Avalon import pyAvalonTools as pyAv
 
 from Contrib.NP_Score import npscorer
+
+try:
+    # Try to import Avalon so it can be used for generation of 2d coordinates.
+    from rdkit.Avalon import pyAvalonTools as pyAv
+    USE_AVALON_2D = True
+except ImportError:
+    print("* Avalon not available. Using RDKit for 2d coordinate generation.")
+    USE_AVALON_2D = False
 
 from IPython.core.display import SVG
 
@@ -74,6 +81,21 @@ class NormalizeAroundZero():
                 return 0.5 + (0.5 * val / self.vmax)
         else:
             return 0.5
+
+
+def check_2d_coords(mol, force=False):
+    """Check if a mol has 2D coordinates and if not, calculate them."""
+    if not force:
+        try:
+            mol.GetConformer()
+        except ValueError:
+            force = True  # no 2D coords... calculate them
+
+    if force:
+        if USE_AVALON_2D:
+            pyAv.Generate2DCoords(mol)
+        else:
+            mol.Compute2DCoords()
 
 
 def score_np(mol):
@@ -159,7 +181,7 @@ def highlight_np_scores(mol, col_map="rwg", output="svg", png_fn="contribs.png",
     bond_cols = {bond: cmap(norm(score))
                  for bond, score in bond_scores.items()}
 
-    rdDepictor.Compute2DCoords(mol)
+    check_2d_coords(mol)
     drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
     drawer.DrawMolecule(mol, highlightAtoms=atom_cols.keys(), highlightAtomColors=atom_cols,
                         highlightBonds=bond_cols.keys(), highlightBondColors=bond_cols)
@@ -185,5 +207,7 @@ def highlight_np_scores(mol, col_map="rwg", output="svg", png_fn="contribs.png",
         else:
             print("Unknown output option.")
             return
-    else:
+    elif output == "svg":
         return SVG(svg)
+    else:
+        print("Unknown output option:", output)
