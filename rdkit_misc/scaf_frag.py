@@ -138,10 +138,11 @@ def get_exhaustive_frags(mol):
     return result
 
 
-def get_hieriarchical_frags(mol):
+def get_hieriarchical_frags(mol_or_smi):
     """Hierarchically (recursively) split a molecule into fragments.
     Only-non-ring bonds are split and only fragments with at least one ring
-    are considered to be a fragment.
+    are considered.
+    Takes a mol object or a Smiles string as input.
     Returns a list of fragments as Smiles."""
 
     def _recursive_split(s, n=0):
@@ -172,10 +173,16 @@ def get_hieriarchical_frags(mol):
                     print(f"{murcko}  ({Chem.MolToSmiles(f)})")
                 _recursive_split(murcko, n + 1)
 
-    try:
-        murcko = MurckoScaffold.MurckoScaffoldSmiles(mol=mol)
-    except ValueError:
-        return []
+    if isinstance(mol_or_smi, str):
+        try:
+            murcko = MurckoScaffold.MurckoScaffoldSmiles(smiles=mol_or_smi)
+        except ValueError:
+            return []
+    else:
+        try:
+            murcko = MurckoScaffold.MurckoScaffoldSmiles(mol=mol_or_smi)
+        except ValueError:
+            return []
     result = {murcko: True}
     _recursive_split(murcko)
     return list(sorted(result.keys(), key=len, reverse=True))
